@@ -1,0 +1,13 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="TopBar" style="flex-grow: 0; flex-direction: row; justify-content: space-between; flex-shrink: 0;">
+        <ui:Button text="Main Menu" name="MainMenu" style="background-color: rgb(149, 57, 57);" />
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: stretch; justify-content: flex-end;">
+            <ui:VisualElement name="Resource1" style="flex-grow: 0; flex-direction: row; flex-shrink: 0;">
+                <ui:VisualElement name="Resource1Icon" style="flex-grow: 0; width: 32px; height: 32px; background-image: resource(&apos;Resource1&apos;); flex-shrink: 0; -unity-background-scale-mode: scale-to-fit;" />
+                <ui:Label text="Label" name="Resource1Text" style="width: 100px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="EmptySpace" style="flex-grow: 1;" />
+    <ui:VisualElement name="BottomUi" style="flex-grow: 1;" />
+</ui:UXML>
