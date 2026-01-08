@@ -4,9 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using NUnit.Framework;
+using Unity.AI.Navigation;
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.AI;
+using UnityEngine.Rendering;
+using UnityEngine.UIElements;
+using Image = UnityEngine.UI.Image;
 using Random = System.Random;
 
 public static class Utils
@@ -27,6 +31,8 @@ public class MapGen : MonoBehaviour
     public Vector2Int mapSize = new(256, 256);
     public int reprRezolutionMultiplyer = 1;
     public Image image;
+    public UIDocument previewDoc;
+    public UIDocument UIDoc;
     public MapArea.DiagSplitPosition diagSplitPosition;
     public float contestedAreaScale = 0.2f;
     public Texture2D Output;
@@ -36,6 +42,7 @@ public class MapGen : MonoBehaviour
     public int MinNonFrontierNodes;
 
 
+    public int InitialNodeFill;
     public int MinFrontierSpacing;
     public int MaxFrontierSpacing;
 
@@ -51,6 +58,9 @@ public class MapGen : MonoBehaviour
     public List<Graph.Edge> Edges;
     public List<Graph.Node> Nodes;
     public Dictionary<Graph.Node, HashSet<Graph.Node>> FinalConnections;
+    public float PathMaxWidth;
+    public Graph graph;
+    public float RampLength;
 
     private bool Proceed
     {
@@ -63,6 +73,7 @@ public class MapGen : MonoBehaviour
 
     private void Start()
     {
+        
         StartCoroutine(Generate());
         // renderer = GetComponent<Renderer>();
         //     StartCoroutine(GenerateUntilSuccess());
@@ -184,7 +195,7 @@ public class MapGen : MonoBehaviour
         
         foreach (var newNode in newNodes)
         {
-            if (!MarkNode(newNode.Position, MinFrontierSpacing / 2, newNode)) Debug.Log("problem");
+            if (!MarkNode(newNode.Position, InitialNodeFill, newNode)) Debug.Log("problem");
 
             ;
             FinalConnections[newNode] = LinqUtility.ToHashSet(FinalConnections[correspondingNodes[newNode]]
@@ -204,7 +215,435 @@ public class MapGen : MonoBehaviour
             RenderMap();
             yield return Step;
         }
+        
+            // var center = new Graph.Node();
+
+            // center.Position = mapSize / 2;
+
+            // MarkNode(center.Position, InitialNodeFill, center);
+
+
+            Graph.Edge CorrespondingEdge(Graph.Edge e)
+            {
+                return new Graph.Edge(correspondingNodes[e.Start], correspondingNodes[e.End]);
+            }
+
+            frontierP1.Sort((n1, n2) => n1.Position.x.CompareTo(n2.Position.x));
+
+            var frontierP2 = frontierP1.Select(n => correspondingNodes[n]).Reverse().ToList();
+
+
+            foreach (var (n1, n2) in frontierP1.Zip(frontierP2, (n1, n2) => (n1, n2)))
+                if (n1 == correspondingNodes[n2])
+                {
+                    // FinalConnections[n1].Add(center);
+                    // FinalConnections[center] = new HashSet<Graph.Node>();
+                    // FinalConnections[center].Add(n1);
+                    //
+                    // FinalConnections[n2].Add(center);
+                    // FinalConnections[center].Add(n2);
+                    //
+                    // foreach (var position in CapsulePositions(center.Position, n1.Position, PathMinWidth, mapSize))
+                    //     if (Map[position.x, position.y].Type != MapElement.EType.Node)
+                    //         Map[position.x, position.y] = new MapElement(n1, center);
+                    //
+                    // foreach (var position in CapsulePositions(center.Position, n2.Position, PathMinWidth, mapSize))
+                    //     if (Map[position.x, position.y].Type != MapElement.EType.Node)
+                    //         Map[position.x, position.y] = new MapElement(n2, center);
+                    //
+                    // center.Height = n1.Height + Random.Next(-1, 2);
+                    
+                }
+                else
+                {
+                    FinalConnections[n1].Add(n2);
+                    FinalConnections[n2].Add(n1);
+
+                    foreach (var position in CapsulePositions(n1.Position, n2.Position, PathMinWidth, mapSize))
+                        if (Map[position.x, position.y].Type != MapElement.EType.Node)
+                            Map[position.x, position.y] = new MapElement(n1, n2);
+                }
+
+            {
+                RenderMap();
+                Proceed = false;
+                while (!Proceed) yield return null;
+            }
+
+            // startFloodFill
+
+            List<Vector2Int> floodFillQueue = new();
+            HashSet<Vector2Int> floodFillVisited = new();
+
+            IEnumerable<Vector2Int> NeighbourCells(Vector2Int c)
+            {
+                if (c.x > 0) yield return new Vector2Int(c.x - 1, c.y);
+                if (c.y > 0) yield return new Vector2Int(c.x, c.y - 1);
+                if (c.x + 1 < mapSize.x) yield return new Vector2Int(c.x + 1, c.y);
+                if (c.y + 1 < mapSize.y) yield return new Vector2Int(c.x, c.y + 1);
+            }
+
+
+            for (var x = 0; x < mapSize.x; x++)
+            for (var y = 0; y < mapSize.y; y++)
+            {
+                var pos = new Vector2Int(x, y);
+                if (Map[x, y].Type != MapElement.EType.Node && Map[x, y].Type != MapElement.EType.Edge)
+                    if (NeighbourCells(new Vector2Int(x, y)).Any(p =>
+                            Map[p.x, p.y].Type == MapElement.EType.Node ||
+                            Map[p.x, p.y].Type == MapElement.EType.Edge))
+                    {
+                        floodFillQueue.Add(pos);
+                        floodFillVisited.Add(pos);
+                    }
+            }
+
+            // int pasdikap = 0;
+
+            while (floodFillQueue.Count > 0)
+            {
+                bool IsUnfilled(MapElement me)
+                {
+                    return me.Type != MapElement.EType.Node && me.Type != MapElement.EType.Edge;
+                }
+
+                bool IsFilled(MapElement me)
+                {
+                    return !IsUnfilled(me);
+                }
+
+                var id = Random.Next(floodFillQueue.Count);
+                var node = floodFillQueue[id];
+                floodFillQueue.RemoveAt(id);
+
+
+                List<MapElement> ComputeChoice(Vector2Int n)
+                {
+                    var neighs = NeighbourCells(n).ToList();
+
+                    var possibleChoices = neighs.Select(neigh => Map[neigh.x, neigh.y]).Where(IsFilled).ToList();
+
+                    possibleChoices.RemoveAll(e =>
+                    {
+                        if (e.Type == MapElement.EType.Node)
+                            return Vector2.Distance(e.Node.Position, n) > MaxFrontierSpacing;
+
+                        var v1 = (Vector2)e.Edge.Start.Position;
+                        var v2 = (Vector2)e.Edge.End.Position;
+
+                        var dir = (v2 - v1).normalized;
+
+                        var dAlongDir = Vector2.Dot(n - v1, dir);
+
+                        if (dAlongDir < 0 || dAlongDir > (v2 - v1).magnitude) return true;
+
+                        var projection = v1 + dAlongDir * dir;
+
+                        return Vector2.Distance(node, projection) > PathMaxWidth;
+                    });
+
+                    return possibleChoices;
+                }
+
+                var possibleChoices = ComputeChoice(node);
+
+                if (possibleChoices.Count == 0) continue;
+
+                var nodeChoices = possibleChoices.FindAll(c => c.Type == MapElement.EType.Node);
+                MapElement choice;
+
+                if (nodeChoices.Count == 0)
+                    choice = possibleChoices[Random.Next(possibleChoices.Count)];
+                else
+                    choice = nodeChoices[Random.Next(nodeChoices.Count)];
+
+
+                Map[node.x, node.y] = choice;
+
+                var neighs = NeighbourCells(node).ToList();
+                foreach (var cell in neighs.Where(n => !floodFillVisited.Contains(n)))
+                    if (IsUnfilled(Map[cell.x, cell.y]))
+                        if (ComputeChoice(cell).Count > 0)
+                        {
+                            floodFillQueue.Add(cell);
+                            floodFillVisited.Add(cell);
+                        }
+
+                // if (pasdikap == 0)
+                // {
+                //     RenderMap();
+                //     yield return Step;
+                // }
+                //
+                // pasdikap++;
+                // pasdikap %= 1;
+            }
+
+            for (var x = 0; x < mapSize.x; x++)
+            for (var y = 0; y < mapSize.y; y++)
+            {
+                var pos = new Vector2Int(x, y);
+                if (Map[x, y].Type != MapElement.EType.Node && Map[x, y].Type != MapElement.EType.Edge)
+                    if (NeighbourCells(new Vector2Int(x, y)).Any(p =>
+                            Map[p.x, p.y].Type == MapElement.EType.Node ||
+                            Map[p.x, p.y].Type == MapElement.EType.Edge))
+                    {
+                        floodFillQueue.Add(pos);
+                        floodFillVisited.Add(pos);
+                    }
+            }
+
+            while (floodFillQueue.Count > 0)
+            {
+                bool IsUnfilled(MapElement me)
+                {
+                    return me.Type != MapElement.EType.Node && me.Type != MapElement.EType.Edge;
+                }
+
+                bool IsFilled(MapElement me)
+                {
+                    return !IsUnfilled(me);
+                }
+
+                var id = Random.Next(floodFillQueue.Count);
+                var node = floodFillQueue[id];
+                floodFillQueue.RemoveAt(id);
+
+
+                List<MapElement> ComputeChoice(Vector2Int n)
+                {
+                    var neighs = NeighbourCells(n).ToList();
+
+                    var possibleChoices = neighs.Select(neigh => Map[neigh.x, neigh.y]).Where(IsFilled).ToList();
+
+                    possibleChoices.RemoveAll(e =>
+                    {
+                        if (e.Type == MapElement.EType.Node)
+                            return Vector2.Distance(e.Node.Position, n) > MaxFrontierSpacing;
+
+                        var v1 = (Vector2)e.Edge.Start.Position;
+                        var v2 = (Vector2)e.Edge.End.Position;
+
+                        var dir = (v2 - v1).normalized;
+
+                        var dAlongDir = Vector2.Dot(n - v1, dir);
+
+                        if (dAlongDir < 0 || dAlongDir > (v2 - v1).magnitude) return true;
+
+                        var projection = v1 + dAlongDir * dir;
+
+                        return Vector2.Distance(node, projection) > PathMaxWidth;
+                    });
+
+                    return possibleChoices;
+                }
+
+                var possibleChoices = ComputeChoice(node);
+
+                if (possibleChoices.Count == 0) continue;
+
+                var nodeChoices = possibleChoices.FindAll(c => c.Type == MapElement.EType.Node);
+                MapElement choice;
+
+                if (nodeChoices.Count == 0)
+                    choice = possibleChoices[Random.Next(possibleChoices.Count)];
+                else
+                    choice = nodeChoices[Random.Next(nodeChoices.Count)];
+
+
+                Map[node.x, node.y] = choice;
+
+                var neighs = NeighbourCells(node).ToList();
+                foreach (var cell in neighs.Where(n => !floodFillVisited.Contains(n)))
+                    if (IsUnfilled(Map[cell.x, cell.y]))
+                        if (ComputeChoice(cell).Count > 0)
+                        {
+                            floodFillQueue.Add(cell);
+                            floodFillVisited.Add(cell);
+                        }
+
+                // if (pasdikap == 0)
+                // {
+                //     RenderMap();
+                //     yield return Step;
+                // }
+                //
+                // pasdikap++;
+                // pasdikap %= 1;
+            }
+
+
+            {
+                RenderMap();
+                Proceed = false;
+                while (!Proceed) yield return null;
+            }
+
+            graph = new Graph();
+
+            graph.Nodes = Nodes;
+            graph.Root = main;
+
+            // while (true)
+            // {
+            //     RenderHeightMap();
+            //     yield return Step;
+            //     RenderMap();
+            //     yield return Step;
+            // }
+
+
+            // var heightmapTexture = new Texture2D(mapSize.x, mapSize.y, TextureFormat.R8, false);
+            // heightmapTexture.filterMode = FilterMode.Bilinear;
+
+            float[,] heights = new float[mapSize.x, mapSize.y];
+            
+            for (var x = 0; x < mapSize.x; x++)
+            for (var y = 0; y < mapSize.y; y++)
+            {
+                float normH = 0;
+                var ok = true;
+
+                switch (Map[x, y].Type)
+                {
+                    case MapElement.EType.Node:
+                        normH = (Map[x, y].Node.Height + 1) / ((float)MaxHeight + 1);
+                        break;
+                    case MapElement.EType.Edge:
+                        var n1 = Map[x, y].Edge.Start;
+                        var n2 = Map[x, y].Edge.End;
+
+                        if (n1.Height == n2.Height)
+                        {
+                            normH = (n1.Height + 1) / ((float)MaxHeight + 1);
+                            break;
+                        }
+
+                        var d1 = Vector2.Distance(new Vector2(x, y), n1.Position);
+                        var d2 = Vector2.Distance(new Vector2(x, y), n2.Position);
+                        var n1H = (n1.Height + 1) / ((float)MaxHeight + 1);
+                        var n2H = (n2.Height + 1) / ((float)MaxHeight + 1);
+
+                        var deltad = Math.Abs(d1 - d2);
+                        if (deltad < RampLength)
+                        {
+                            normH = Mathf.Lerp(n1H, n2H, ((d1 - d2) / RampLength + 1) / 2);
+                        }
+                        else
+                        {
+                            if (d1 < d2)
+                                normH = n1H;
+                            else
+                                normH = n2H;
+                        }
+
+                        break;
+                    default:
+                        ok = false;
+                        break;
+                }
+
+                if (ok)
+                {
+                    // heightmapTexture.SetPixel(x, y, new Color(normH, normH, normH));
+                    heights[x, y] = normH;
+                }
+                else
+                {
+                    // heightmapTexture.SetPixel(x, y, new Color(0, 0, 0));
+                    heights[x, y] = 0;
+                }
+            }
+
+
+            // mesh.RecalculateNormals();
+            // mesh.RecalculateBounds();
+
+            float[,] filteredHeights = heights.Clone() as float[,];
+            for (int i = 1; i < mapSize.x - 1; i++)
+            {
+                for (int j = 1; j < mapSize.x - 1; j++)
+                {
+                    float neighSum = 0;
+                    neighSum += heights[i+1, j+1];
+                    neighSum += heights[i+1, j];
+                    neighSum += heights[i+1, j-1];
+                    neighSum += heights[i, j+1];
+                    neighSum += heights[i, j-1];
+                    neighSum += heights[i-1, j+1];
+                    neighSum += heights[i-1, j];
+                    neighSum += heights[i-1, j-1];
+
+
+                    filteredHeights[i, j] = heights[i, j] * 0.5f + neighSum / 8 * 0.5f;
+                }
+            }
+            
+
+            GetComponent<Terrain>().terrainData.heightmapResolution = mapSize.x;
+            GetComponent<Terrain>().terrainData.SetHeights(0,0,filteredHeights);
+
+            GetComponent<NavMeshSurface>().BuildNavMesh();
+            
+            Debug.Log("done");
+
     }
+    
+    void RenderHeightMap()
+            {
+                for (var x = 0; x < mapSize.x; x++)
+                for (var y = 0; y < mapSize.y; y++)
+                {
+                    float normH = 0;
+                    var ok = true;
+
+                    switch (Map[x, y].Type)
+                    {
+                        case MapElement.EType.Node:
+                            normH = Map[x, y].Node.Height / (float)MaxHeight;
+                            break;
+                        case MapElement.EType.Edge:
+                            var n1 = Map[x, y].Edge.Start;
+                            var n2 = Map[x, y].Edge.End;
+
+                            if (n1.Height == n2.Height)
+                            {
+                                normH = n1.Height / (float)MaxHeight;
+                                break;
+                            }
+
+                            var d1 = Vector2.Distance(new Vector2(x, y), n1.Position);
+                            var d2 = Vector2.Distance(new Vector2(x, y), n2.Position);
+                            var n1H = n1.Height / (float)MaxHeight;
+                            var n2H = n2.Height / (float)MaxHeight;
+
+                            var deltad = Math.Abs(d1 - d2);
+                            if (deltad < RampLength)
+                            {
+                                normH = Mathf.Lerp(n1H, n2H, ((d1 - d2) / RampLength + 1) / 2);
+                            }
+                            else
+                            {
+                                if (d1 < d2)
+                                    normH = n1H;
+                                else
+                                    normH = n2H;
+                            }
+
+                            break;
+                        default:
+                            ok = false;
+                            break;
+                    }
+
+                    if (ok)
+                        Output.SetPixel(x, y, new Color(normH, normH, normH, 1));
+                    else
+                        Output.SetPixel(x, y, Color.red);
+                }
+
+                Output.Apply();
+            }
     
     bool Visit(Graph.Node n, HashSet<Graph.Node> visited)
             {
@@ -414,6 +853,8 @@ public class MapGen : MonoBehaviour
                      mapSize))
             if (Map[position.x, position.y].Type != MapElement.EType.Node)
                 Map[position.x, position.y] = new MapElement(e);
+        
+        
     }
 
     private static bool CheckIsolatedNodes(Dictionary<Graph.Node, List<Graph.Node>> possibleConnections)
@@ -548,7 +989,7 @@ public class MapGen : MonoBehaviour
         {
             n.Position = pos;
 
-            collides = !MarkNode(n.Position, MinFrontierSpacing / 2, n);
+            collides = !MarkNode(n.Position, InitialNodeFill, n);
         }
 
         if (!collides) nodes.Add(n);
@@ -591,7 +1032,7 @@ public class MapGen : MonoBehaviour
             {
                 n.Position = pos;
 
-                ok = MarkNode(n.Position, MinFrontierSpacing / 2, n);
+                ok = MarkNode(n.Position, InitialNodeFill, n);
             }
         } while (!ok);
 
@@ -654,6 +1095,9 @@ public class MapGen : MonoBehaviour
             TextureFormat.RGBA32, false);
         Output.filterMode = FilterMode.Point;
         image.sprite = Sprite.Create(Output, Rect.zero, Vector2.zero);
+        previewDoc.rootVisualElement.Q("ImgContainer").style.backgroundImage = Output;
+        previewDoc.rootVisualElement.Q<Button>("HidePreviewButton").clicked += () => { Destroy(previewDoc); };
+        UIDoc.rootVisualElement.Q("Minimap").style.backgroundImage = Output;
     }
 
     private void InitRandom()
@@ -741,6 +1185,9 @@ public class MapGen : MonoBehaviour
 
     public class Graph
     {
+        public List<Node> Nodes;
+        public Node Root;
+        
         public class Node
         {
             private Vector2Int _position;

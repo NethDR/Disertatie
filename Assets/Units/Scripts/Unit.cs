@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AI;
@@ -5,91 +7,93 @@ using UnityEngine.InputSystem;
 
 public class Unit : MonoBehaviour
 {
-    [SerializeReference]
-    public Player owner;
-    
-    public abstract class GenericTarget
+    private int _hp;
+    [SerializeField]
+    private int _maxHp;
+
+
+    public float moveSpeed = 20;
+    public float acceleration = 10;
+
+
+    public int HP
     {
-        public abstract Vector3 Position();
-    }
-
-    public class PointTarget : GenericTarget
-    {
-        private Vector3 _targetPoint;
-
-        public PointTarget(Vector3 targetPoint)
-        {
-            _targetPoint = targetPoint;
-        }
-
-        public override Vector3 Position()
-        {
-            return _targetPoint;
+        get { return _hp; }
+        set {
+            _hp = value;
+            if (_hp > _maxHp) _hp = _maxHp;
+            if (_hp <= 0) Destroy(gameObject);
         }
     }
+    
+    
+    public int MaxHp => _maxHp;
 
-    public class UnitTarget : GenericTarget
-    {
-        private Unit _targetUnit;
-        
-        public override Vector3 Position()
-        {
-            return _targetUnit.transform.position;
-        }
-        
-    }
+    [SerializeField]
+    private string _typename;
+    public string Typename => _typename;
 
-    
-    [CanBeNull] public GenericTarget Target;
-    
-    public static bool SameTeam(Unit a, Unit b)
+    // [SerializeReference]
+    // public Player owner;
+
+    private CommandCard _baseCommandCard = new CommandCard()
     {
-        return a.owner.Team == b.owner.Team;
-    }
-    
-    public bool SameTeam(Unit other)
-    {
-        return owner.Team == other.owner.Team;
-    }
-    
-    
+        A = GeneralCommands.Attack,
+        S = GeneralCommands.Stop,
+        D = GeneralCommands.Move
+    };
+
+    public virtual CommandCard CommandCard => _baseCommandCard;
+
     [SerializeField] private GameObject selectionRing;
-    [SerializeField] private InputActionAsset inputActionAsset;
-    [SerializeField] private LayerMask ground;
-    
-    private InputActionMap _actionMap;
     
     private bool _isSelected;
     public bool IsSelected
     {
-        get => _isSelected;
+        get { return _isSelected; }
         set
         {
-            selectionRing.SetActive(value);
             _isSelected = value;
+            selectionRing.SetActive(value);
         }
     }
     
-    private InputAction _moveCommand;
-    
 
-    [CanBeNull] public AttackController AttackController { get; private set; }
-    [CanBeNull] public MoveController MoveController { get; private set; }
-    [CanBeNull] public NavMeshAgent Agent { get; private set; }
-    
-    
     private void Start()
     {
-        Agent = GetComponent<NavMeshAgent>();
-        IsSelected = false;
+        _hp = _maxHp;
+            GetComponent<NavMeshAgent>().speed = moveSpeed;
+            GetComponent<NavMeshAgent>().acceleration = acceleration;
+        
+        InitResources();
+        
         UnitSelectionManager.Instance.RegisterUnit(this);
-            
-        // GetComponent<>()
+
     }
 
-    // Update is called once per frame
-    void Update()
+    public void MoveTo(Vector3 point)
     {
-        
+        GetComponent<NavMeshAgent>()?.SetDestination(point);
+    }
+    
+    public void Stop()
+    {
+        GetComponent<NavMeshAgent>()?.SetDestination(transform.position);
+    }
+
+    private void OnDestroy()
+    {
+        UnitSelectionManager.Instance.DeregisterUnit(this);
+    }
+
+
+    public virtual void InitResources(){}
+
+    public void Attack(Unit attackUnitTarget)
+    {
+    }
+
+    public void AttackMove(Vector3? attackPointTarget)
+    {
     }
 }

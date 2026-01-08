@@ -5,31 +5,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class UnitSelectionManager : MonoBehaviour
-    {
+{
         public static UnitSelectionManager Instance;
-
-
-        [SerializeField] private RectTransform boxVisual;
-
-        [SerializeField] private LayerMask clickable;
-
-        private readonly HashSet<Unit> _allUnits = new();
-
-
-        public readonly HashSet<Unit> Selection = new();
-
-        private RtsActions.UnitControlActions _actionMap;
-
-        private bool _boxConfirmed;
-        private bool _boxInProgress;
-
-        private UnityEngine.Camera _camera;
-        private Vector2 _endPosition;
-
-        private Rect _selectionBox;
-
-        private Vector2 _startPosition;
-
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -37,7 +14,26 @@ public class UnitSelectionManager : MonoBehaviour
             else
                 Instance = this;
         }
+        
+        [SerializeField] private LayerMask clickable;
+        
+        private readonly HashSet<Unit> _allUnits = new();
+        public readonly HashSet<Unit> Selection = new();
+        
+        private RtsActions.UnitControlActions _actionMap;
 
+        private bool _boxConfirmed;
+        private bool _boxInProgress;
+        
+        
+        private UnityEngine.Camera _camera;
+        private Vector2 _endPosition;
+        private Rect _selectionBox;
+        private Vector2 _startPosition;
+        
+        [SerializeField] private RectTransform boxVisual;
+        
+        
         private void Start()
         {
             _actionMap = ActionAssetHolder.Instance.Actions.UnitControl;
@@ -50,8 +46,6 @@ public class UnitSelectionManager : MonoBehaviour
 
 
             _camera = UnityEngine.Camera.main;
-
-            GameObject.Find("SelectionCanvas").GetComponent<Canvas>();
         }
 
 
@@ -64,6 +58,8 @@ public class UnitSelectionManager : MonoBehaviour
                 UpdateRect();
                 DrawSelection();
             }
+            
+            UIController.Instance.MarkSelection(Selection.ToList());
         }
 
         public void RegisterUnit(Unit obj)
@@ -74,6 +70,10 @@ public class UnitSelectionManager : MonoBehaviour
         public void DeregisterUnit(Unit obj)
         {
             _allUnits.Remove(obj);
+            if (Selection.Remove(obj))
+            {
+                UIController.Instance.MarkSelection(Selection.ToList());
+            }
         }
 
         private void UpdateRect()
@@ -179,7 +179,7 @@ public class UnitSelectionManager : MonoBehaviour
 
         private static bool IsSelected(Unit unit)
         {
-            return unit.GetComponent<Unit>().IsSelected;
+            return unit.IsSelected;
         }
 
         private void PerformSelection(InputAction.CallbackContext obj)
@@ -206,8 +206,9 @@ public class UnitSelectionManager : MonoBehaviour
 
         private void AddToSelection(Unit obj)
         {
-            obj.GetComponent<Unit>().IsSelected = true;
+            obj.IsSelected = true;
             Selection.Add(obj);
+            
         }
 
         private void AddToSelection(ICollection<Unit> objs)
@@ -247,4 +248,10 @@ public class UnitSelectionManager : MonoBehaviour
             foreach (var selectable in Selection) selectable.GetComponent<Unit>().IsSelected = false;
             Selection.Clear();
         }
-    }
+
+        public CommandCard getCommandCard()
+        {
+            if (Selection.Count == 0) return null;
+            return Selection.First().CommandCard;
+        }
+}

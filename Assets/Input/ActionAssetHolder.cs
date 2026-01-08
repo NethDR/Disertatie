@@ -15,6 +15,7 @@ public class ActionAssetHolder : MonoBehaviour
         {
             Instance = this;
             Actions = new RtsActions();
+            Actions.Enable();
         }
     }
 }

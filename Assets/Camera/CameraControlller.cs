@@ -11,6 +11,8 @@ public class CameraController : MonoBehaviour
         [SerializeField] private float edgePanMargin = 10f;
         [SerializeField] private float edgePanSpeed = 0.5f;
 
+        public Terrain t;
+
 
         private RtsActions.CameraControlActions _cameraControlMap;
         private InputAction _mmbDrag;
@@ -59,6 +61,10 @@ public class CameraController : MonoBehaviour
 
                 transform.Translate(scrollDir.x, 0, scrollDir.y);
             }
+
+            var pos = transform.position;
+            pos.y = t.SampleHeight(pos);
+            transform.position = pos;
         }
 
 
