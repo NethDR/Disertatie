@@ -20,7 +20,8 @@ public class UnitCommandManager : MonoBehaviour
     
     [SerializeField]
     private UnityEngine.Camera _camera;
-    
+
+    public GameObject ghost;
 
     public void SendCommand(Command c)
     {
@@ -39,30 +40,41 @@ public class UnitCommandManager : MonoBehaviour
             {
                 SendCommand(ChosenCommand);
                 ChosenCommand = null;
+            } else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.W.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.W;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.E.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.E;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.R.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.R;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.T.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.T;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         
         
@@ -70,31 +82,41 @@ public class UnitCommandManager : MonoBehaviour
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.S.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.S;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.D.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.D;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.F.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.F;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.G.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.G;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         
         
@@ -102,31 +124,41 @@ public class UnitCommandManager : MonoBehaviour
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
-            }};;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
+            }};
         cmdmap.X.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.X;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.C.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.C;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.V.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.V;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
         cmdmap.B.performed += (ctx) => { ChosenCommand = UnitSelectionManager.Instance.getCommandCard()?.B;
             if(ChosenCommand is NoTargetCommand)
             {
                 SendCommand(ChosenCommand);
-                ChosenCommand = null;
+                ChosenCommand = null;} else if (ChosenCommand is BuildCommand buildCommand && buildCommand.buildingGhostPrefab)
+            {
+                ghost = Instantiate(buildCommand.buildingGhostPrefab);
             }};
 
         var select = ActionAssetHolder.Instance.Actions.UnitControl.Move;
@@ -174,5 +206,20 @@ public class UnitCommandManager : MonoBehaviour
     private void Update()
     {
         Cursor.SetCursor(ChosenCommand?.Icon, Vector2.zero, CursorMode.Auto);
+        if (ghost)
+        {
+            if (ChosenCommand is BuildCommand b)
+            {
+                var ray = _camera.ScreenPointToRay(Mouse.current.position.value);
+                if (Physics.Raycast(ray, out var hit, Mathf.Infinity, ground))
+                {
+                    ghost.transform.position = hit.point;
+                }
+            }
+            else
+            {
+                Destroy(ghost);
+            }
+        }
     }
 }

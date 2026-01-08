@@ -65,7 +65,14 @@ public class Worker : Unit
 
             BuildRecCenter.Icon = Resources.Load<Texture2D>("CommandIcons/Worker/Build");
             BuildResCenter.Icon = Resources.Load<Texture2D>("Resource1");
-            
+
+            BuildRecCenter.buildingPrefab = Resources.Load<GameObject>("RecCenter");
+            BuildResCenter.buildingPrefab = Resources.Load<GameObject>("ResCenter");
+
+            BuildRecCenter.buildingGhostPrefab = Resources.Load<GameObject>("BuidGhost");
+            BuildResCenter.buildingGhostPrefab = Resources.Load<GameObject>("BuidGhost");
+
+            StaticsInit = true;
         }
     }
 }

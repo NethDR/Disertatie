@@ -1,7 +1,7 @@
 using System;
 using Unity.VisualScripting;
 using UnityEngine;
-
+using Object = UnityEngine.Object;
 
 
 [Serializable]
@@ -27,10 +27,16 @@ public class PointTargetCommand : Command
 }
 
 [Serializable]
-public class BuildCommand : Command
+public class BuildCommand : PointTargetCommand
 {
     public GameObject buildingPrefab;
     public GameObject buildingGhostPrefab;
+
+    public BuildCommand()
+    {
+        perform = unit => { if(UnitCommandManager.Instance.ghost?.GetComponent<BuildGhost>().ok == true)
+            Object.Instantiate(buildingPrefab, target, Quaternion.identity); };
+    }
 }
 
 [Serializable]

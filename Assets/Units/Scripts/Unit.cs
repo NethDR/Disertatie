@@ -62,8 +62,11 @@ public class Unit : MonoBehaviour
     private void Start()
     {
         _hp = _maxHp;
+        if (GetComponent<NavMeshAgent>())
+        {
             GetComponent<NavMeshAgent>().speed = moveSpeed;
             GetComponent<NavMeshAgent>().acceleration = acceleration;
+        }
         
         InitResources();
         
